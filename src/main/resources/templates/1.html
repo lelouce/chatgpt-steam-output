@@ -116,12 +116,12 @@
 <!--    <a id="disconnectSSE" rel="noopener noreferrer">断开连接</a>-->
 <!--</div>-->
 <div class="float-card">
-    <div class="float-card-item">
-        <a href="https://www.unfbx.com" target="_blank" rel="noopener noreferrer">Website</a>
-    </div>
-    <div class="float-card-item">
-        <a href="https://github.com/Grt1228" target="_blank" rel="noopener noreferrer">Github</a>
-    </div>
+<!--    <div class="float-card-item">-->
+<!--        <a href="https://www.unfbx.com" target="_blank" rel="noopener noreferrer">Website</a>-->
+<!--    </div>-->
+<!--    <div class="float-card-item">-->
+<!--        <a href="https://github.com/Grt1228" target="_blank" rel="noopener noreferrer">Github</a>-->
+<!--    </div>-->
     <div class="float-card-item">
         <a id="disconnectSSE" rel="noopener noreferrer">停止输出</a>
     </div>
@@ -136,13 +136,13 @@
         <tbody id="chat">
         <tr>
             <td>
-                <pre style="font-size: 15px">
-                    帮忙点个star吧<br/>
-                    1、依赖ChatGPT开源Java SDK：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-java"
-                                             target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-java</a><br/>
-                    2、本项目免费开源地址：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-steam-output"
-                                   target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-steam-output</a><br/>
-                    3、默认保持连接5分钟，默认上下文保持10个，5分钟无请求上下文会话销毁。
+                <pre style="font-size: 15px; display: flex">
+<!--                    帮忙点个star吧<br/>-->
+<!--                    1、依赖ChatGPT开源Java SDK：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-java"-->
+<!--                                             target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-java</a><br/>-->
+<!--                    2、本项目免费开源地址：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-steam-output"-->
+<!--                                   target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-steam-output</a><br/>-->
+                    1、默认保持连接5分钟，默认上下文保持10个，5分钟无请求上下文会话销毁。
                 </pre>
             </td>
         </tr>
@@ -177,18 +177,25 @@
 
     .container {
         width: 980px;
-        border: 1px solid black;
+        /*border: 1px solid black;*/
         display: flex;
         flex-direction: column;
         margin-left: 150px;
         margin-top: 40px;
+        padding-bottom: 72px;
+        border-width: 0;
     }
 
     .input-card {
         position: fixed;
-        display: inline-block;
+        display: flex;
         right: 37%;
-        top: 80%;
+        width: 100%;
+        bottom: 0;
+        transform: translateX(-50%);
+        left: 50%;
+        justify-content: center;
+        background: #fff;
     }
 
     .input-card-item {
