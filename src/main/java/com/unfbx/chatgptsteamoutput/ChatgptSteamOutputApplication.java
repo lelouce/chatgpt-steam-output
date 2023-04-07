@@ -1,6 +1,9 @@
 package com.unfbx.chatgptsteamoutput;
 
 import com.unfbx.chatgpt.OpenAiStreamClient;
+import com.unfbx.chatgpt.OpenAiStreamClient.Builder;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -19,6 +22,11 @@ public class ChatgptSteamOutputApplication {
     private String apiKey;
     @Value("${chatgpt.apiHost}")
     private String apiHost;
+    @Value("${chatgpt.proxyHost}")
+    private String proxyHost;
+    @Value("${chatgpt.port}")
+    private Integer port;
+
 
     public static void main(String[] args) {
         SpringApplication.run(ChatgptSteamOutputApplication.class, args);
@@ -27,7 +35,12 @@ public class ChatgptSteamOutputApplication {
 
     @Bean
     public OpenAiStreamClient openAiStreamClient() {
-        return OpenAiStreamClient.builder().apiHost(apiHost).apiKey(apiKey).build();
+        Builder builder = OpenAiStreamClient.builder().apiHost(apiHost).apiKey(apiKey);
+        if (proxyHost != null && port != null) {
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
+            builder.proxy(proxy);
+        }
+        return builder.build();
     }
 
 }
