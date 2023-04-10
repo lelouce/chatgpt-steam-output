@@ -43,6 +43,7 @@ public class ChatController {
     @CrossOrigin
     public SseEmitter chat(@RequestParam("message") String msg, @RequestHeader Map<String, String> headers) throws IOException {
         //默认30秒超时,设置为0L则永不超时
+        log.info("开始");
         SseEmitter sseEmitter = new SseEmitter(0l);
         String uid = headers.get("uid");
         if (StrUtil.isBlank(uid)) {
