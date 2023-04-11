@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <link href="css/markdown.css" rel="stylesheet" type="text/css"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
 
 <head>
     <meta charset="UTF-8">
@@ -13,6 +14,8 @@
         function setText(text, uuid_str) {
             let content = document.getElementById(uuid_str)
             content.innerHTML = marked(text);
+            const containerEle = document.getElementById('container')
+            document.documentElement.scrollTop = containerEle.clientHeight
         }
 
         function uuid() {
@@ -33,7 +36,9 @@
         window.onload = function () {
             let disconnectBtn = document.getElementById("disconnectSSE");
             let messageElement = document.getElementById("message");
+            let btnElement = document.getElementById("sendBtn");
             let chat = document.getElementById("chat");
+            const footerEle = document.getElementById('input-card');
             let sse;
             let uid = window.localStorage.getItem("uid");
             if (uid == null || uid == '' || uid == 'null') {
@@ -41,63 +46,86 @@
             }
             // 设置本地存储
             window.localStorage.setItem("uid", uid);
+            // 查询方法
+            const queryMessage = function () {
+                if (!messageElement.value) {
+                    return;
+                }
+                let text = '';
+                let uuid_str = uuid();
+                // const eventSource = new EventSource('http://localhost:8000/chat?message=' + messageElement.value);
+                const eventSource = new EventSourcePolyfill('http://172.16.9.202:8100/chat?message=' + messageElement.value, {
+                    headers: {
+                        'uid': uid
+                    }
+                });
+                eventSource.onopen = (event) => {
+                    console.log("onopen", event.readyState, event.target);
+                    footerEle.style.display = 'none'
+                    sse = event.target;
+                    //新增问题框
+                    // chat.innerHTML += '<tr><td style="height: 50px;">' + messageElement.value + '</td></tr>';
+                    chat.innerHTML += `<div class="question-title" style="height: 50px;">
+                        <div>ME:</div>
+                        <div><span>${messageElement.value}</span></div>    
+                    </div>`;
+                    messageElement.value = null
+                    //新增答案框
+                    chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
+                    const questionBoxs = document.querySelectorAll('.question-title')
+                    const emptyEle = document.getElementById('chat-empty')
+                    console.log(questionBoxs, emptyEle)
+                    if (questionBoxs.length > 0) {
+                        emptyEle.style.display = 'none'
+                    } else {
+                        emptyEle.style.display = 'block'
+                    }
+                };
+                eventSource.onmessage = (event) => {
+                    if (event.data == "[DONE]") {
+                        console.log('end')
+                        footerEle.style.display = 'flex'
+                        text = '';
+                        if (sse) {
+                            sse.close();
+                        }
+                        return;
+                    }
+                    let json_data = JSON.parse(event.data)
+                    if (json_data.content == null || json_data.content == 'null') {
+                        text = '';
+                        return;
+                    }
+                    text = text + json_data.content;
+                    setText(text, uuid_str)
+
+                };
+                eventSource.onerror = (event) => {
+                    console.log("onerror", event);
+                    alert("服务异常请重试并联系开发者！")
+                    if (event.readyState === EventSource.CLOSED) {
+                        console.log('connection is closed');
+                    } else {
+                        console.log("Error occured", event);
+                    }
+                    event.target.close();
+                };
+                eventSource.addEventListener("customEventName", (event) => {
+                    console.log("Message id is " + event.lastEventId);
+                });
+            };
             // 回车事件
             messageElement.onkeydown = function () {
                 if (window.event.keyCode === 13) {
-                    if (!messageElement.value) {
-                        return;
-                    }
-                    let text = '';
-                    let uuid_str = uuid();
-                    // const eventSource = new EventSource('http://localhost:8000/chat?message=' + messageElement.value);
-                    const eventSource = new EventSourcePolyfill('/chat?message=' + messageElement.value, {
-                        headers: {
-                            'uid': uid
-                        }
-                    });
-                    eventSource.onopen = (event) => {
-                        console.log("onopen", event.readyState, event.target);
-                        sse = event.target;
-                        //新增问题框
-                        chat.innerHTML += '<tr><td style="height: 50px;">' + messageElement.value + '</td></tr>';
-                        messageElement.value = null
-                        //新增答案框
-                        chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
-                    };
-                    eventSource.onmessage = (event) => {
-                        if (event.data == "[DONE]") {
-                            text = '';
-                            if (sse) {
-                                sse.close();
-                            }
-                            return;
-                        }
-                        let json_data = JSON.parse(event.data)
-                        if (json_data.content == null || json_data.content == 'null') {
-                            text = '';
-                            return;
-                        }
-                        text = text + json_data.content;
-                        setText(text, uuid_str)
-
-                    };
-                    eventSource.onerror = (event) => {
-                        console.log("onerror", event);
-                        alert("服务异常请重试并联系开发者！")
-                        if (event.readyState === EventSource.CLOSED) {
-                            console.log('connection is closed');
-                        } else {
-                            console.log("Error occured", event);
-                        }
-                        event.target.close();
-                    };
-                    eventSource.addEventListener("customEventName", (event) => {
-                        console.log("Message id is " + event.lastEventId);
-                    });
+                    queryMessage()
                 }
-            };
+            }
+            btnElement.onclick = function() {
+                queryMessage()
+            }
 
             disconnectBtn.onclick = function () {
+                footerEle.style.display = 'flex'
                 if (sse) {
                     sse.close();
                 }
@@ -126,39 +154,56 @@
         <a id="disconnectSSE" rel="noopener noreferrer">停止咨询</a>
     </div>
 </div>
-<div class="input-card">
-    <div class="input-card-item">
-        <input id="message" placeholder="输入你的问题，回车结束......" type="text">
-    </div>
-</div>
-<div class="container">
-    <table border="1">
+<div class="container" id="container">
+    <!-- <table border="1">
         <tbody id="chat">
         <tr>
             <td>
                 <pre style="font-size: 15px; display: flex">
-<!--                    帮忙点个star吧<br/>-->
-<!--                    1、依赖ChatGPT开源Java SDK：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-java"-->
-<!--                                             target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-java</a><br/>-->
-<!--                    2、本项目免费开源地址：<a rel="noopener noreferrer" href="https://github.com/Grt1228/chatgpt-steam-output"-->
-<!--                                   target="_blank" style="font-size: 15px">https://github.com/Grt1228/chatgpt-steam-output</a><br/>-->
                     1、默认保持连接5分钟，默认上下文保持10个，5分钟无请求上下文会话销毁。
                 </pre>
             </td>
         </tr>
         </tbody>
-    </table>
+    </table> -->
+    <div id="chat">
+        <div class="chat-header">
+            <span class="chat-header-title">ChatGPT</span>
+            <span class="chat-header-text">默认上下文保持10个，5分钟无请求上下文会话销毁</span>
+        </div>
+        <div id="chat-empty">
+            <span>请在下方输入框中输入要咨询的问题</span>
+        </div>
+    </div>
+</div>
+<div class="input-card" id="input-card">
+    <div class="input-card-item">
+        <input id="message" placeholder="输入你的问题，回车结束......" type="text">
+        <button id="sendBtn">发送</button>
+    </div>
 </div>
 
 
 </body>
 <style>
+    * {
+        margin: 0;
+    }
+    html {
+        scroll-behavior:smooth
+    }
     .markdown-body {
         box-sizing: border-box;
         min-width: 200px;
-        max-width: 980px;
+        max-width: 100%;
         margin: 0 auto;
-        padding: 45px;
+        padding: 12px;
+        background-color: rgba(241, 245, 249, 0.8);
+        margin: 12px;
+        border-radius: 12px;
+    }
+    .markdown-body p {
+        color: #000;
     }
 
     @media (max-width: 767px) {
@@ -176,41 +221,100 @@
     }
 
     .container {
-        width: 980px;
+        width: 100%;
         /*border: 1px solid black;*/
         display: flex;
         flex-direction: column;
-        margin-left: 150px;
-        margin-top: 40px;
+        /* margin-left: 150px;
+        margin-top: 40px; */
         padding-bottom: 72px;
         border-width: 0;
+    }
+    #chat-empty {
+        padding: 12px;
+    }
+    .chat-header {
+        padding: 12px;
+        background-color: rgba(243, 244, 246, 1);
+        display: flex;
+        align-items: center;
+        position: static;
+        top: 0;
+    }
+    .chat-header-title {
+        font-size: 28px;
+        margin-right: 12px;
+        font-weight: 600;
+    }
+    .chat-header-text {
+        color: rgba(107, 114, 128, 1);
+    }
+    .question-title {
+        margin: 12px;
+        padding: 12px;
+        font-weight: 600;
+        transition: all 0.5s;
+        border-radius: 12px;
+        background-color: rgba(241, 245, 249, 0.8);
+    }
+    .question-title pre {
+        font-size: 16px;
+    }
+    .question-title:hover {
+        background-color: rgba(241, 245, 249, 1);
     }
 
     .input-card {
         position: fixed;
         display: flex;
-        right: 37%;
         width: 100%;
         bottom: 0;
-        transform: translateX(-50%);
-        left: 50%;
         justify-content: center;
-        background: #fff;
+        background-color: rgba(243, 244, 246, 1);
     }
 
     .input-card-item {
+        width: 100%;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+        /* justify-content: center; */
         align-items: center;
         margin-bottom: 16px;
+        padding: 12px;
+    }
+    .input-card-item input {
+        height: 36px;
+        flex-grow: 1;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        background-color: rgba(255, 255, 255, 1);
+        color: rgba(55, 65, 81, 1);
+        margin-right: 12px;
+        margin-left: 12px;
+        padding-left: 12px;
+        flex: 1;
+        font-size: 14px;
+    }
+    .input-card-item input::placeholder {
+        font-size: 14px;
+        color: #ccc;
+    }
+
+    .input-card-item button {
+        background-color: rgba(29, 78, 216, 1);
+        color: #fff;
+        border: 0;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        margin-right: 12px;
     }
 
     .float-card {
         position: fixed;
         display: inline-block;
-        right: 120px;
-        top: 100px;
+        bottom: 100px;
+        right: 24px;
     }
 
     .float-card-item {
@@ -223,16 +327,18 @@
         border-radius: 50%;
         background-color: #ccccd6;
         margin-bottom: 16px;
+        cursor: pointer;
     }
 
     .float-card-item:last-child {
         margin-bottom: 0px;
-        background-color: #d0838e;
+        cursor: pointer;
+        background-color: rgba(29, 78, 216, 1);
     }
 
     .float-card-item a {
         text-decoration: none;
-        color: #594649;
+        color: #fff;
         font-size: 13px;
     }
 </style>
