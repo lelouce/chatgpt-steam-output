@@ -5,11 +5,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>战损版ChatGPT-SSE实现流式输出</title>
+    <title>鑫蜂维ChatGPT</title>
     <link rel="icon" type="image/png" sizes="32x32" href="image/favicon-32x32.png">
     <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
     <script src="js/markdown.min.js"></script>
     <script src="js/eventsource.min.js"></script>
+    <script src="js/fetchEvent.js"></script>
     <script>
         function setText(text, uuid_str) {
             let content = document.getElementById(uuid_str)
@@ -40,10 +41,12 @@
             let chat = document.getElementById("chat");
             const footerEle = document.getElementById('input-card');
             let sse;
-            let uid = window.localStorage.getItem("uid");
-            if (uid == null || uid == '' || uid == 'null') {
-                uid = uuid();
-            }
+            let sseFetch;
+            let uid = uuid();
+            // let uid = window.localStorage.getItem("uid");
+            // if (uid == null || uid == '' || uid == 'null') {
+            //     uid = uuid();
+            // }
             // 设置本地存储
             window.localStorage.setItem("uid", uid);
             // 查询方法
@@ -53,66 +56,138 @@
                 }
                 let text = '';
                 let uuid_str = uuid();
-                // const eventSource = new EventSource('http://localhost:8000/chat?message=' + messageElement.value);
-                const eventSource = new EventSourcePolyfill('http://172.16.9.202:8100/chat?message=' + messageElement.value, {
+                sseFetch = new AbortController();
+                fetchEventSource('http://172.16.9.202:8100/chat', {
+                    method: 'POST',
                     headers: {
-                        'uid': uid
-                    }
-                });
-                eventSource.onopen = (event) => {
-                    console.log("onopen", event.readyState, event.target);
-                    footerEle.style.display = 'none'
-                    sse = event.target;
-                    //新增问题框
-                    // chat.innerHTML += '<tr><td style="height: 50px;">' + messageElement.value + '</td></tr>';
-                    chat.innerHTML += `<div class="question-title" style="height: 50px;">
-                        <div>ME:</div>
-                        <div><span>${messageElement.value}</span></div>    
-                    </div>`;
-                    messageElement.value = null
-                    //新增答案框
-                    chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
-                    const questionBoxs = document.querySelectorAll('.question-title')
-                    const emptyEle = document.getElementById('chat-empty')
-                    console.log(questionBoxs, emptyEle)
-                    if (questionBoxs.length > 0) {
-                        emptyEle.style.display = 'none'
-                    } else {
-                        emptyEle.style.display = 'block'
-                    }
-                };
-                eventSource.onmessage = (event) => {
-                    if (event.data == "[DONE]") {
-                        console.log('end')
-                        footerEle.style.display = 'flex'
-                        text = '';
-                        if (sse) {
-                            sse.close();
+                        'uid': uid,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: messageElement.value }),
+                    signal: sseFetch.signal,
+                    onopen(event) {
+                        console.log("onopen", event.readyState, event.target, event);
+                        footerEle.style.display = 'none'
+                        sse = event.target;
+                        //新增问题框
+                        // chat.innerHTML += '<tr><td style="height: 50px;">' + messageElement.value + '</td></tr>';
+                        chat.innerHTML += `<div class="question-title">
+                            <div>ME:</div>
+                            <div><span>${messageElement.value}</span></div>    
+                        </div>`;
+                        messageElement.value = null
+                        //新增答案框
+                        chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
+                        const questionBoxs = document.querySelectorAll('.question-title')
+                        const emptyEle = document.getElementById('chat-empty')
+                        console.log(questionBoxs, emptyEle)
+                        if (questionBoxs.length > 0) {
+                            emptyEle.style.display = 'none'
+                        } else {
+                            emptyEle.style.display = 'block'
                         }
-                        return;
+                    },
+                    onmessage(event) {
+                        console.log(event, 'event')
+                        if (event.data == "[DONE]") {
+                            footerEle.style.display = 'flex'
+                            text = '';
+                            if (sseFetch) {
+                                sseFetch.signal.closeFetch()
+                            }
+                            return;
+                        }
+                        let json_data = JSON.parse(event.data)
+                        if (json_data.content == null || json_data.content == 'null') {
+                            text = '';
+                            return;
+                        }
+                        text = text + json_data.content;
+                        setText(text, uuid_str)
+                    },
+                    onerror(event) {
+                        alert("服务异常请重试并联系开发者！")
+                        if (event.readyState === EventSource.CLOSED) {
+                            console.log('connection is closed');
+                        } else {
+                            console.log("Error occured", event);
+                        }
+                        if (sseFetch) {
+                            console.log(sseFetch, 'sseFetch')
+                            sseFetch.signal.closeFetch()
+                        }
+                    },
+                    onclose(event) {
+                        console.log(event, 'close event');
                     }
-                    let json_data = JSON.parse(event.data)
-                    if (json_data.content == null || json_data.content == 'null') {
-                        text = '';
-                        return;
-                    }
-                    text = text + json_data.content;
-                    setText(text, uuid_str)
+                })
+                return;
+                // http://172.16.9.202:8100/chat
+                // const eventSource = new EventSource('http://localhost:8000/chat?message=' + messageElement.value);
+                // const eventSource = new EventSourcePolyfill('http://172.16.9.202:8100/chat', {
+                //     headers: {
+                //         'uid': uid
+                //     },
+                //     method: 'post',
+                //     body: JSON.stringify({ data: messageElement.value }),
+                // });
+                // eventSource.onopen = (event) => {
+                //     console.log("onopen", event.readyState, event.target);
+                //     footerEle.style.display = 'none'
+                //     sse = event.target;
+                //     //新增问题框
+                //     // chat.innerHTML += '<tr><td style="height: 50px;">' + messageElement.value + '</td></tr>';
+                //     chat.innerHTML += `<div class="question-title" style="height: 50px;">
+                //         <div>ME:</div>
+                //         <div><span>${messageElement.value}</span></div>    
+                //     </div>`;
+                //     messageElement.value = null
+                //     //新增答案框
+                //     chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
+                //     const questionBoxs = document.querySelectorAll('.question-title')
+                //     const emptyEle = document.getElementById('chat-empty')
+                //     console.log(questionBoxs, emptyEle)
+                //     if (questionBoxs.length > 0) {
+                //         emptyEle.style.display = 'none'
+                //     } else {
+                //         emptyEle.style.display = 'block'
+                //     }
+                // };
+                // eventSource.onmessage = (event) => {
+                //     if (event.data == "[DONE]") {
+                //         console.log('end')
+                //         footerEle.style.display = 'flex'
+                //         text = '';
+                //         if (sse) {
+                //             sse.close();
+                //         }
+                //         if (sseFetch) {
+                //             sseFetch.signal.abort()
+                //         }
+                //         return;
+                //     }
+                //     let json_data = JSON.parse(event.data)
+                //     if (json_data.content == null || json_data.content == 'null') {
+                //         text = '';
+                //         return;
+                //     }
+                //     text = text + json_data.content;
+                //     setText(text, uuid_str)
 
-                };
-                eventSource.onerror = (event) => {
-                    console.log("onerror", event);
-                    alert("服务异常请重试并联系开发者！")
-                    if (event.readyState === EventSource.CLOSED) {
-                        console.log('connection is closed');
-                    } else {
-                        console.log("Error occured", event);
-                    }
-                    event.target.close();
-                };
-                eventSource.addEventListener("customEventName", (event) => {
-                    console.log("Message id is " + event.lastEventId);
-                });
+                // };
+                // eventSource.onerror = (event) => {
+                //     console.log("onerror", event);
+                //     alert("服务异常请重试并联系开发者！")
+                //     if (event.readyState === EventSource.CLOSED) {
+                //         console.log('connection is closed');
+                //     } else {
+                //         console.log("Error occured", event);
+                //     }
+                //     event.target.close();
+                // };
+                // eventSource.addEventListener("customEventName", (event) => {
+                //     console.log("Message id is " + event.lastEventId);
+                // });
             };
             // 回车事件
             messageElement.onkeydown = function () {
@@ -128,6 +203,10 @@
                 footerEle.style.display = 'flex'
                 if (sse) {
                     sse.close();
+                }
+                if (sseFetch) {
+                    console.log(sseFetch, 'sseFetch')
+                    sseFetch.signal.closeFetch()
                 }
             };
 

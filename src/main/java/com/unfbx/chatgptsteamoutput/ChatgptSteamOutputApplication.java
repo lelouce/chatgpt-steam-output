@@ -4,6 +4,7 @@ import com.unfbx.chatgpt.OpenAiStreamClient;
 import com.unfbx.chatgpt.OpenAiStreamClient.Builder;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Bean;
  * @date 2023-02-28
  */
 @SpringBootApplication
+@Slf4j
 public class ChatgptSteamOutputApplication {
 
     @Value("${chatgpt.apiKey}")
@@ -36,6 +38,7 @@ public class ChatgptSteamOutputApplication {
     @Bean
     public OpenAiStreamClient openAiStreamClient() {
         Builder builder = OpenAiStreamClient.builder().apiHost(apiHost).apiKey(apiKey);
+        log.info("apiKey:{}", apiKey);
         if (proxyHost != null && port != null) {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port));
             builder.proxy(proxy);

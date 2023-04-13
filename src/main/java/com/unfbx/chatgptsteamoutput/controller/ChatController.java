@@ -8,12 +8,17 @@ import com.unfbx.chatgpt.entity.chat.Message;
 import com.unfbx.chatgpt.exception.BaseException;
 import com.unfbx.chatgpt.exception.CommonError;
 import com.unfbx.chatgptsteamoutput.config.LocalCache;
+import com.unfbx.chatgptsteamoutput.entity.ChatReq;
 import com.unfbx.chatgptsteamoutput.listener.OpenAISSEEventSourceListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -39,11 +44,12 @@ public class ChatController {
         this.openAiStreamClient = openAiStreamClient;
     }
 
-    @GetMapping("/chat")
-    @CrossOrigin
-    public SseEmitter chat(@RequestParam("message") String msg, @RequestHeader Map<String, String> headers) throws IOException {
+    @PostMapping("/chat")
+    @CrossOrigin(allowedHeaders = {"*"}, origins = {"*"}, methods = {RequestMethod.GET, RequestMethod.POST})
+    public SseEmitter chat(@RequestBody ChatReq chatReq, @RequestHeader Map<String, String> headers) throws IOException {
         //默认30秒超时,设置为0L则永不超时
         log.info("开始");
+        String msg = chatReq.getMessage();
         SseEmitter sseEmitter = new SseEmitter(0l);
         String uid = headers.get("uid");
         if (StrUtil.isBlank(uid)) {
