@@ -177,13 +177,14 @@ function fetchEventSource(input, {
 
         let curRequestController;
         function onVisibilityChange() {
-            curRequestController.abort(); // close existing request on every visibility change
-            if (!document.hidden) {
-                create(); // page is now visible again, recreate request.
-            }
+            // curRequestController.abort(); // close existing request on every visibility change
+            // if (!document.hidden) {
+            //     create(); // page is now visible again, recreate request.
+            // }
         }
 
         if (!openWhenHidden) {
+            console.log('隐藏');
             document.addEventListener('visibilitychange', onVisibilityChange);
         }
 
@@ -234,6 +235,7 @@ function fetchEventSource(input, {
                 dispose();
                 resolve();
             } catch (err) {
+                console.log(err, 'err')
                 if (!curRequestController.signal.aborted) {
                     // if we haven't aborted the request ourselves:
                     try {
