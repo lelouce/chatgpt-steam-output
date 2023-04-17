@@ -35,6 +35,7 @@
 
 
         window.onload = function () {
+            console.log('11111')
             let disconnectBtn = document.getElementById("disconnectSSE");
             let messageElement = document.getElementById("message");
             let btnElement = document.getElementById("sendBtn");
@@ -88,7 +89,6 @@
                         }
                     },
                     onmessage(event) {
-                        console.log(event, 'event')
                         if (event.data == "[DONE]") {
                             footerEle.style.display = 'flex'
                             text = '';
@@ -98,7 +98,8 @@
                             return;
                         }
                         let json_data = JSON.parse(event.data)
-                        if (json_data.content == null || json_data.content == 'null') {
+                        // || json_data.content == 'null'
+                        if (json_data.content == null) {
                             text = '';
                             return;
                         }
@@ -392,8 +393,8 @@
     .float-card {
         position: fixed;
         display: inline-block;
-        bottom: 100px;
-        right: 24px;
+        top: 80px;
+        right: 12px;
     }
 
     .float-card-item {
