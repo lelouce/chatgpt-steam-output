@@ -5,7 +5,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>鑫蜂维ChatGPT</title>
+    <title>鑫蜂维chatgpt</title>
     <link rel="icon" type="image/png" sizes="32x32" href="image/favicon-32x32.png">
     <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
     <script src="js/markdown.min.js"></script>
@@ -35,7 +35,6 @@
 
 
         window.onload = function () {
-            console.log('11111')
             let disconnectBtn = document.getElementById("disconnectSSE");
             let messageElement = document.getElementById("message");
             let btnElement = document.getElementById("sendBtn");
@@ -58,7 +57,8 @@
                 let text = '';
                 let uuid_str = uuid();
                 sseFetch = new AbortController();
-                fetchEventSource('http://172.16.9.202:8100/chat', {
+                // http://172.16.9.202:8100/chat
+                fetchEventSource('http://chat.forwe.work/chat', {
                     method: 'POST',
                     headers: {
                         'uid': uid,
@@ -67,7 +67,6 @@
                     body: JSON.stringify({ message: messageElement.value }),
                     signal: sseFetch.signal,
                     onopen(event) {
-                        console.log("onopen", event.readyState, event.target, event);
                         footerEle.style.display = 'none'
                         sse = event.target;
                         //新增问题框
@@ -81,7 +80,6 @@
                         chat.innerHTML += '<tr><td><article id="' + uuid_str + '" class="markdown-body"></article></td></tr>';
                         const questionBoxs = document.querySelectorAll('.question-title')
                         const emptyEle = document.getElementById('chat-empty')
-                        console.log(questionBoxs, emptyEle)
                         if (questionBoxs.length > 0) {
                             emptyEle.style.display = 'none'
                         } else {
@@ -125,17 +123,17 @@
                     onerror(event) {
                         alert("服务异常请重试并联系开发者！")
                         if (event.readyState === EventSource.CLOSED) {
-                            console.log('connection is closed');
+                            // console.log('connection is closed');
                         } else {
-                            console.log("Error occured", event);
+                            // console.log("Error occured", event);
                         }
                         if (sseFetch) {
-                            console.log(sseFetch, 'sseFetch')
+                            // console.log(sseFetch, 'sseFetch')
                             sseFetch.signal.closeFetch()
                         }
                     },
                     onclose(event) {
-                        console.log(event, 'close event');
+                        // console.log(event, 'close event');
                     }
                 })
                 return;
@@ -222,7 +220,7 @@
                     sse.close();
                 }
                 if (sseFetch) {
-                    console.log(sseFetch, 'sseFetch')
+                    // console.log(sseFetch, 'sseFetch')
                     sseFetch.signal.closeFetch()
                 }
             };
@@ -246,9 +244,9 @@
 <!--    <div class="float-card-item">-->
 <!--        <a href="https://github.com/Grt1228" target="_blank" rel="noopener noreferrer">Github</a>-->
 <!--    </div>-->
-    <div class="float-card-item">
+    <!-- <div class="float-card-item">
         <a id="disconnectSSE" rel="noopener noreferrer">停止咨询</a>
-    </div>
+    </div> -->
 </div>
 <div class="container" id="container">
     <!-- <table border="1">
@@ -265,7 +263,7 @@
     <div id="chat">
         <div class="chat-header">
             <span class="chat-header-title">ChatGPT</span>
-            <span class="chat-header-text">默认上下文保持10个，5分钟无请求上下文会话销毁</span>
+            <span class="chat-header-text">鑫蜂维1.0Beta</span>
         </div>
         <div id="chat-empty">
             <span>请在下方输入框中输入要咨询的问题</span>
@@ -276,6 +274,7 @@
     <div class="input-card-item">
         <input id="message" placeholder="输入你的问题，回车结束......" type="text">
         <button id="sendBtn">发送</button>
+        <button id="disconnectSSE" rel="noopener noreferrer">停止咨询</button>
     </div>
 </div>
 
@@ -409,7 +408,7 @@
     .float-card {
         position: fixed;
         display: inline-block;
-        top: 80px;
+        top: 12px;
         right: 12px;
     }
 
