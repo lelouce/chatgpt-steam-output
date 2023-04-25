@@ -7,11 +7,13 @@ import com.unfbx.chatgpt.entity.billing.CreditGrantsResponse;
 import com.unfbx.chatgpt.entity.chat.Message;
 import com.unfbx.chatgpt.exception.BaseException;
 import com.unfbx.chatgpt.exception.CommonError;
+import com.unfbx.chatgptsteamoutput.config.ApplicationContextProvider;
 import com.unfbx.chatgptsteamoutput.config.LocalCache;
 import com.unfbx.chatgptsteamoutput.entity.ChatReq;
 import com.unfbx.chatgptsteamoutput.listener.OpenAISSEEventSourceListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,6 +51,10 @@ public class ChatController {
     public SseEmitter chat(@RequestBody ChatReq chatReq, @RequestHeader Map<String, String> headers) throws IOException {
         //默认30秒超时,设置为0L则永不超时
         log.info("开始");
+        List<String> keyList = openAiStreamClient.getApiKey();
+        if (CollectionUtils.isEmpty(keyList)) {
+            throw new BaseException(CommonError.API_KEYS_NOT_NUL);
+        }
         String msg = chatReq.getMessage();
         SseEmitter sseEmitter = new SseEmitter(0l);
         String uid = headers.get("uid");

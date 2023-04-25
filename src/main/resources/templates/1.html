@@ -89,7 +89,23 @@
                         }
                     },
                     onmessage(event) {
-                        if (event.data == "[DONE]") {
+                        if (event.data == "[KEY ERROR]") {
+                            alert("系统开小差，请稍后重试");
+                            footerEle.style.display = 'flex'
+                            text = '';
+                            if (sseFetch) {
+                                sseFetch.signal.closeFetch()
+                            }
+                            return;
+                        } else if (event.data == "[KEY EMPTY]") {
+                            alert("没有有效的apiKey，请联系管理员");
+                            footerEle.style.display = 'flex'
+                            text = '';
+                            if (sseFetch) {
+                                sseFetch.signal.closeFetch()
+                            }
+                            return;
+                        } else if (event.data == "[DONE]") {
                             footerEle.style.display = 'flex'
                             text = '';
                             if (sseFetch) {
