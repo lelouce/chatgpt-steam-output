@@ -58,7 +58,7 @@
                 let text = '';
                 let uuid_str = uuid();
                 sseFetch = new AbortController();
-                fetchEventSource('http://127.0.0.1:8100/chat', {
+                fetchEventSource('http://172.16.9.202:8100/chat', {
                     method: 'POST',
                     headers: {
                         'uid': uid,
